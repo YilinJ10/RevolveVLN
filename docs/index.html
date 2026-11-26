@@ -12,7 +12,7 @@
   <link rel="preload" href="assets/dm-sans.woff" as="font" type="font/woff" crossorigin>
   <link rel="preload" href="assets/hero-robot-portrait.webp" as="image" media="(max-aspect-ratio: 4/5)" fetchpriority="high">
   <link rel="preload" href="assets/hero-robot.webp?v=7aae7e741b63" as="image" media="not all and (max-aspect-ratio: 4/5)" fetchpriority="high">
-  <link rel="stylesheet" href="styles.css?v=17241067d86d">
+  <link rel="stylesheet" href="styles.css?v=5923898b7d17">
   <script src="site.js?v=7fd180191dfc" defer></script>
   <noscript><style>
     .demo-screen video { background-position: center; background-size: contain; background-repeat: no-repeat; }
@@ -98,7 +98,7 @@
       <div class="resources" role="group" aria-label="Paper resources">
         <a class="resource-arxiv" href="#release-arxiv"><span class="resource-face"><img class="resource-icon" src="assets/logos/arxiv.svg" width="22" height="22" alt="" aria-hidden="true">arXiv</span></a>
         <a class="resource-code" href="https://github.com/YilinJ10/RevolveVLN"><span class="resource-face"><img class="resource-icon" src="assets/logos/github.svg" width="22" height="22" alt="" aria-hidden="true">Code</span></a>
-        <a class="resource-checkpoints" href="#release-checkpoints"><span class="resource-face"><img class="resource-icon" src="assets/logos/huggingface.svg" width="26" height="26" alt="" aria-hidden="true">Checkpoints</span></a>
+        <a id="release-checkpoints" class="resource-checkpoints" href="https://huggingface.co/yilin-jia/RevolveVLN" aria-label="Checkpoints on Hugging Face (access restricted)"><span class="resource-face"><img class="resource-icon" src="assets/logos/huggingface.svg" width="26" height="26" alt="" aria-hidden="true"><span class="resource-label">Checkpoints <small>Restricted</small></span></span></a>
       </div>
     </div>
   </header>
@@ -369,7 +369,6 @@
     </section>
   </main>
   <aside class="release-status" id="release-arxiv"><h2>arXiv preprint</h2><p>The preprint link will appear here when the paper is available on arXiv.</p><a href="#top">Close</a></aside>
-  <aside class="release-status" id="release-checkpoints"><h2>Checkpoints</h2><p>The model weights will be released in a separate repository. Its link will appear here when available.</p><a href="#top">Close</a></aside>
   <dialog id="resource-dialog" aria-labelledby="resource-name" aria-describedby="resource-message"><h2 id="resource-name"></h2><p id="resource-message"></p><form method="dialog"><button>Close</button></form></dialog>
 </body>
 </html>

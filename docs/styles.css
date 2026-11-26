@@ -240,6 +240,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 3px s
 }
 .resource-icon { display: block; flex: none; width: 1.12em; height: 1.12em; object-fit: contain; }
 .resource-checkpoints .resource-icon { width: 1.3em; height: 1.3em; }
+.resource-checkpoints .resource-face { padding-block: .18em; }
+.resource-checkpoints .resource-label { line-height: 1.05; text-align: left; }
+.resource-checkpoints small { display: block; font-size: max(.625rem, .68em); font-weight: 500; line-height: 1.1; }
 @media (forced-colors: active) and (prefers-color-scheme: light) {
   .resource-arxiv .resource-icon, .resource-code .resource-icon { filter: brightness(0); }
 }
