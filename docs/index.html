@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#192126">
+  <link rel="canonical" href="https://yilinj10.github.io/RevolveVLN/">
+  <meta name="description" content="RevolveVLN updates remembered views with streaming geometry and locates them in the robot’s current frame. Explore the architecture, navigation benchmarks, and six real-world recordings.">
+  <title>RevolveVLN</title>
+  <meta property="og:site_name" content="RevolveVLN">
+  <link rel="icon" href="assets/mark.png" type="image/png">
+  <link rel="preload" href="assets/dm-sans.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="assets/hero-robot-portrait.webp" as="image" media="(max-aspect-ratio: 4/5)" fetchpriority="high">
+  <link rel="preload" href="assets/hero-robot.webp?v=7aae7e741b63" as="image" media="not all and (max-aspect-ratio: 4/5)" fetchpriority="high">
+  <link rel="stylesheet" href="styles.css?v=be1dd81a1121">
+  <script src="site.js?v=08e8c0a823d9" defer></script>
+  <noscript><style>
+    .demo-screen video { background-position: center; background-size: contain; background-repeat: no-repeat; }
+    #long-horizon-return video { background-image: url("assets/demos/main.webp"); }
+    #between-landmarks video { background-image: url("assets/demos/case1.webp"); }
+    #conditional-route video { background-image: url("assets/demos/case2.webp"); }
+    #farthest-room video { background-image: url("assets/demos/case3.webp"); }
+    #second-chair video { background-image: url("assets/demos/case4.webp"); }
+    #farthest-chair video { background-image: url("assets/demos/case5.webp"); }
+  </style></noscript>
+</head>
+<body>
+  <a class="skip" href="#abstract">Skip to abstract</a>
+  <header class="hero" id="top" aria-labelledby="paper-title">
+    <div class="hero-film" aria-hidden="true">
+      <picture>
+        <source media="(max-aspect-ratio: 4/5)" srcset="assets/hero-robot-portrait.webp" width="864" height="1080">
+        <img class="opening-poster" src="assets/hero-robot.webp?v=7aae7e741b63" width="1920" height="1080" alt="" fetchpriority="high">
+      </picture>
+      <div class="film-frame">
+        <video id="hero-video" data-stream="assets/route-film-c55d49b41580/full.m3u8" data-src="assets/long-horizon.mp4?v=d1256c2f5e04" muted playsinline loop preload="none" disablepictureinpicture></video>
+        <canvas id="held-camera-frame" hidden></canvas>
+      </div>
+    </div>
+    <div class="film-shade" aria-hidden="true"></div>
+    <div class="hero-views" role="group" aria-label="Synchronized views of the full navigation task">
+      <figure class="eye-view">
+        <div class="inset-view">
+          <img src="assets/hero-egocentric.webp?v=d47cbba9345e"
+               srcset="assets/hero-egocentric-640.webp 640w, assets/hero-egocentric-960.webp 960w, assets/hero-egocentric.webp?v=d47cbba9345e 1920w"
+               sizes="(max-width: 36rem) and (orientation: portrait) 44vw, (orientation: portrait) min(33vw, 268px), clamp(195px, 23vw, 385px)"
+               alt="The robot looks out of the corridor toward the living room" width="1920" height="1080">
+          <canvas id="egocentric-canvas" width="960" height="540" aria-hidden="true"></canvas>
+          <button type="button" id="motion" title="Play synchronized video" aria-label="Play synchronized video" hidden><span aria-hidden="true"></span></button>
+        </div>
+        <figcaption>First-person view</figcaption>
+      </figure>
+      <figure class="memory-view">
+        <div class="inset-view">
+          <img src="assets/hero-reconstruction.webp?v=eda077679192"
+               srcset="assets/hero-reconstruction-640.webp 640w, assets/hero-reconstruction-960.webp 960w, assets/hero-reconstruction.webp?v=eda077679192 1920w"
+               sizes="(max-width: 36rem) and (orientation: portrait) 51vw, (orientation: portrait) min(37vw, 298px), clamp(218px, 26.4vw, 445px)"
+               alt="R³ reconstruction of the corridor and living room at the same moment" width="1920" height="912">
+          <canvas id="reconstruction-canvas" width="960" height="456" aria-hidden="true"></canvas>
+          <button type="button" id="hero-quality" aria-label="High-definition video" aria-pressed="false" aria-controls="hero-video" title="Switch to high definition" hidden><span aria-hidden="true">HD</span></button>
+        </div>
+        <figcaption>R³ reconstruction</figcaption>
+      </figure>
+    </div>
+    <div class="poster-content">
+      <h1 id="paper-title"><span class="project-name">Revolve<span>VLN</span><span class="sr-only">:</span></span>
+        <span class="paper-subtitle">Evolving Egocentric Memory towards Spatial Intelligence in <span class="term">Vision-Language</span> Navigation</span></h1>
+      <ul class="authors" aria-label="Authors">
+          <li aria-describedby="equal-contribution">Yilin Jia<sup>1,3<span aria-hidden="true">,*</span></sup></li>
+          <li aria-describedby="equal-contribution">Yangyi Zhong<sup>2<span aria-hidden="true">,*</span></sup></li>
+          <li>Hongze Yao<sup>3</sup></li>
+          <li>Mai Liu<sup>3</sup></li>
+          <li>Xiaohui Lv<sup>3</sup></li>
+          <li>Shuai Tao<sup>3</sup></li>
+          <li>Wulong Liu<sup>3</sup></li>
+          <li>Rong Li<sup>2</sup></li>
+          <li>Zeying Gong<sup>2</sup></li>
+          <li>Tianshuai Hu<sup>4</sup></li>
+          <li aria-describedby="corresponding-authors">Junfeng Fan<sup>1<span aria-hidden="true">,†</span></sup></li>
+          <li aria-describedby="corresponding-authors">Junwei Liang<sup>2,4<span aria-hidden="true">,†</span></sup></li>
+      </ul>
+      <ol class="affiliation-names" aria-label="Author affiliations">
+        <li><sup>1</sup> Institute of Automation, Chinese Academy of Sciences</li>
+        <li><sup>2</sup> The Hong Kong University of Science and Technology (Guangzhou)</li>
+        <li><sup>3</sup> Beta Infinity</li>
+        <li><sup>4</sup> The Hong Kong University of Science and Technology</li>
+      </ol>
+      <p class="author-notes">
+        <span id="equal-contribution"><b aria-hidden="true">*</b> Equal contribution</span>
+        <span id="corresponding-authors"><b aria-hidden="true">†</b> Corresponding authors</span>
+      </p>
+      <ul class="institutions" aria-label="Institution websites">
+        <li><a class="logo-casia" href="http://english.ia.cas.cn/" target="_blank" rel="noopener noreferrer" aria-label="Institute of Automation, Chinese Academy of Sciences, affiliation 1"><img src="assets/institution-casia-en.svg?v=3e22bc35e91f" width="512" height="82" alt="Institute of Automation, Chinese Academy of Sciences"></a></li>
+        <li><a class="logo-hkust-gz" href="https://www.hkust-gz.edu.cn/" target="_blank" rel="noopener noreferrer" aria-label="The Hong Kong University of Science and Technology (Guangzhou), affiliation 2"><img src="assets/institution-hkust-gz.svg?v=4cccaa0c7744" width="283" height="57" alt="The Hong Kong University of Science and Technology (Guangzhou)"></a></li>
+        <li><a class="logo-beta" href="https://betainf.com/" target="_blank" rel="noopener noreferrer" aria-label="Beta Infinity, affiliation 3"><img src="assets/institution-beta.png?v=4271d33d105b" width="1810" height="334" alt="Beta Infinity"></a></li>
+        <li><a class="logo-hkust" href="https://hkust.edu.hk/" target="_blank" rel="noopener noreferrer" aria-label="The Hong Kong University of Science and Technology, affiliation 4"><img src="assets/institution-hkust.svg?v=e907f77be4fb" width="169" height="43" alt="The Hong Kong University of Science and Technology"></a></li>
+      </ul>
+      <div class="resources" role="group" aria-label="Paper resources">
+        <a class="resource-arxiv" href="#release-arxiv"><span class="resource-face"><img class="resource-icon" src="assets/logos/arxiv.svg" width="22" height="22" alt="" aria-hidden="true">arXiv</span></a>
+        <a class="resource-code" href="https://github.com/YilinJ10/RevolveVLN"><span class="resource-face"><img class="resource-icon" src="assets/logos/github.svg" width="22" height="22" alt="" aria-hidden="true">Code</span></a>
+        <a class="resource-checkpoints" href="#release-checkpoints"><span class="resource-face"><img class="resource-icon" src="assets/logos/huggingface.svg" width="26" height="26" alt="" aria-hidden="true">Checkpoints</span></a>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="abstract section" id="abstract" aria-labelledby="abstract-title">
+      <span id="highlights" class="legacy-anchor" aria-hidden="true"></span>
+      <div class="abstract-column">
+        <h2 id="abstract-title">Abstract</h2>
+        <div class="abstract-body">
+          <p>Geometry-enhanced VLN methods build spatial memory for vision-language models by enriching past frames with features from geometry foundation models. However, these frames remain tied to their original geometry and only implicitly related to the agent, limiting spatial intelligence.
+            We observe that streaming geometry foundation models already offer an untapped opportunity to update them as new observations arrive. We propose RevolveVLN, a framework that turns this opportunity into Evolving Egocentric Memory. At each step, it refreshes representations of past observations with the latest streaming geometry and relates them to the agent’s current pose through explicit geometric transformations.
+            Trained only on R2R-CE and RxR-CE with monocular RGB input, RevolveVLN sets a new state of the art under the same training setting; when modestly scaled, it further matches large-scale navigation foundation models like LightNav-0 and Qwen-RobotNav trained on up to 30× more additional data. Furthermore, it achieves zero-shot gains over all models, including GPT-6.1-sol, on NavSpace, a benchmark for spatial intelligence.</p>
+        </div>
+      </div>
+    </section>
+    <section class="method section" id="method" aria-labelledby="method-title">
+      <div class="wide"><h2 id="method-title">Method</h2>
+        <figure class="framework"><a href="assets/framework.webp" target="_blank" rel="noopener" aria-label="Open the full-resolution RevolveVLN framework figure"><img src="assets/framework.webp" width="2203" height="1243" loading="lazy" alt="RevolveVLN architecture. Refresh updates past and current visual tokens with streaming geometry. Reinforce injects geometry into the early decoder layers. Relate transforms historical geometry into the current camera frame before the model predicts actions."><span aria-hidden="true">↗</span></a></figure>
+      </div>
+    </section>
+    <section class="experiments section" id="experiments" aria-labelledby="results-title"><div class="wide">
+      <h2 id="results-title">Experiments</h2>
+      <div class="benchmark-story">
+        <div class="benchmark-heading"><p class="benchmark-kicker">R2R-CE &amp; RxR-CE · Val-unseen</p><h3>Strong navigation from benchmark data alone</h3><p>Trained only on R2R-CE and RxR-CE, RevolveVLN reaches <strong>64.2%</strong> and <strong>65.3%</strong> success rate, respectively.</p></div>
+        <div class="benchmark-pair"><figure class="benchmark-chart"><a href="assets/benchmark-r2r.png" target="_blank" rel="noopener" aria-label="Open full-size chart: R2R-CE success rates: RevolveVLN 64.2%, JanusVLN 60.5%."><img src="assets/benchmark-r2r.png" width="3840" height="2160" loading="lazy" decoding="async" alt="R2R-CE success rates: RevolveVLN 64.2%, JanusVLN 60.5%."></a></figure><figure class="benchmark-chart"><a href="assets/benchmark-rxr.png" target="_blank" rel="noopener" aria-label="Open full-size chart: RxR-CE success rates: RevolveVLN 65.3%, JanusVLN 56.2%."><img src="assets/benchmark-rxr.png" width="3840" height="2160" loading="lazy" decoding="async" alt="RxR-CE success rates: RevolveVLN 65.3%, JanusVLN 56.2%."></a></figure></div>
+        <div class="benchmark-feature">
+          <div class="benchmark-heading"><p class="benchmark-kicker">Scaling with additional data</p><h3>1.10M extra samples.<br>69.3% success on R2R-CE.</h3><p>With additional training, our 4B model reaches 69.3% SR, compared with 68.5% for LightNav-0 and 66.9% for Qwen-RobotNav.</p><p class="benchmark-detail">LightNav-0 uses about 30× as many additional training samples. All three models use single-view RGB.</p></div>
+          <figure class="benchmark-chart"><a href="assets/benchmark-data.png" target="_blank" rel="noopener" aria-label="Open full-size chart: Additional training data and R2R-CE success rates: RevolveVLN 1.10M and 69.3%; Qwen-RobotNav 13.20M and 66.9%; LightNav-0 33.80M and 68.5%."><img src="assets/benchmark-data.png" width="3840" height="2160" loading="lazy" decoding="async" alt="Additional training data and R2R-CE success rates: RevolveVLN 1.10M and 69.3%; Qwen-RobotNav 13.20M and 66.9%; LightNav-0 33.80M and 68.5%."></a></figure>
+        </div>
+      </div>
+      <article class="result" aria-labelledby="vlntitle">
+        <h3 id="vlntitle"><span>Table 1</span> Navigation on unseen routes</h3>
+        <div class="table-shell" role="region" tabindex="0" aria-label="VLN-CE results, scroll horizontally on narrow screens">
+          <table class="main-table" aria-describedby="vln-notes"><caption class="sr-only">Navigation performance on VLN-CE validation-unseen splits</caption>
+            <thead><tr><th rowspan="2" scope="col">Method</th><th rowspan="2" scope="col">VLM<br>params</th><th colspan="4" scope="colgroup">Observation</th><th colspan="4" scope="colgroup">R2R-CE val-unseen</th><th colspan="4" scope="colgroup">RxR-CE val-unseen</th><th rowspan="2" scope="col">Extra<br>data (M)</th></tr>
+            <tr><th scope="col"><abbr title="Single-view RGB">S.RGB</abbr></th><th scope="col"><abbr title="Panoramic RGB">Pano.</abbr></th><th scope="col">Depth</th><th scope="col"><abbr title="Odometry">Odom.</abbr></th><th scope="col">NE ↓</th><th scope="col">OSR ↑</th><th scope="col">SR ↑</th><th scope="col">SPL ↑</th><th scope="col">NE ↓</th><th scope="col">SR ↑</th><th scope="col">SPL ↑</th><th scope="col">nDTW ↑</th></tr></thead>
+            <tbody>
+            <tr>
+              <th scope="row">ETPNav <small>[2] TPAMI’25</small></th><td>–</td><td></td><td>✓</td><td>✓</td><td>✓</td><td>4.7</td><td>65.0</td><td>57.0</td><td>49.0</td><td>5.6</td><td>54.8</td><td>44.9</td><td>61.9</td><td>–</td>
+            </tr>
+            <tr>
+              <th scope="row">HNR <small>[51] CVPR’24</small></th><td>–</td><td></td><td>✓</td><td>✓</td><td>✓</td><td>4.4</td><td>67.0</td><td>61.0</td><td>51.0</td><td>5.5</td><td>56.4</td><td>46.7</td><td>63.6</td><td>–</td>
+            </tr>
+            <tr>
+              <th scope="row">NaVid <small>[65] RSS’24</small></th><td>7B</td><td>✓</td><td></td><td></td><td></td><td>5.7</td><td>49.2</td><td>41.9</td><td>36.5</td><td>5.7</td><td>45.7</td><td>38.2</td><td>–</td><td>0.95</td>
+            </tr>
+            <tr>
+              <th scope="row">NaVILA <small>[11] RSS’25</small></th><td>8B</td><td>✓</td><td></td><td></td><td></td><td>5.2</td><td>62.5</td><td>54.0</td><td>49.0</td><td>6.8</td><td>49.3</td><td>44.0</td><td>58.8</td><td>13.13</td>
+            </tr>
+            <tr>
+              <th scope="row">Uni-NaVid <small>[66] RSS’25</small></th><td>7B</td><td>✓</td><td></td><td></td><td></td><td>5.0</td><td>57.4</td><td>51.8</td><td>47.7</td><td>5.7</td><td>56.1</td><td>44.5</td><td>–</td><td>3.58</td>
+            </tr>
+            <tr>
+              <th scope="row">StreamVLN <small>[54] ICRA’26</small></th><td>7B</td><td>✓</td><td></td><td></td><td></td><td>4.9</td><td>63.6</td><td>56.4</td><td>50.2</td><td>5.7</td><td>54.4</td><td>45.4</td><td>63.7</td><td>26.33</td>
+            </tr>
+            <tr>
+              <th scope="row">JanusVLN <small>[64] ICLR’26</small></th><td>7B</td><td>✓</td><td></td><td></td><td></td><td>4.8</td><td>65.2</td><td>60.5</td><td>56.8</td><td>6.1</td><td>56.2</td><td>47.5</td><td>62.1</td><td>10.69</td>
+            </tr>
+            <tr>
+              <th scope="row">Progress-Think <small>[45] CVPR’26</small></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td>4.7</td><td>63.6</td><td>60.1</td><td>53.6</td><td>–</td><td>–</td><td>–</td><td>–</td><td>✓</td>
+            </tr>
+            <tr>
+              <th scope="row">D3D-VLP <small>[53] CVPR’26</small></th><td>2B</td><td>✓</td><td></td><td>✓</td><td>✓</td><td>4.7</td><td>67.2</td><td>61.3</td><td>56.1</td><td>–</td><td>–</td><td>–</td><td>–</td><td>✓</td>
+            </tr>
+            <tr>
+              <th scope="row">PROSPECT <small>[14] RA-L’26</small></th><td>7B</td><td>✓</td><td></td><td></td><td></td><td>4.9</td><td>65.2</td><td>58.9</td><td>54.0</td><td>5.7</td><td>54.6</td><td>46.2</td><td>62.1</td><td>✓</td>
+            </tr>
+            <tr>
+              <th scope="row">DecoVLN <small>[57] CVPR’26</small></th><td>7B</td><td>✓</td><td></td><td></td><td></td><td>5.0</td><td>63.5</td><td>56.3</td><td>50.5</td><td>5.7</td><td>54.2</td><td>46.3</td><td>63.5</td><td>✓</td>
+            </tr>
+            <tr>
+              <th scope="row">GA-VLN <small>[61] CVPR’26</small></th><td>7B</td><td>✓</td><td></td><td>✓</td><td>✓</td><td>4.8</td><td>67.6</td><td>61.0</td><td>55.2</td><td>5.9</td><td>55.4</td><td>45.2</td><td>–</td><td>✓</td>
+            </tr>
+            <tr>
+              <th scope="row">AdaGeoVLN <small>[33] arXiv’26</small></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td>5.3</td><td>60.7</td><td>55.7</td><td>51.4</td><td>5.6</td><td>54.1</td><td>44.7</td><td>61.8</td><td>0</td>
+            </tr>
+            <tr>
+              <th scope="row">GeoScaffold <small>[20] arXiv’26</small></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td>5.1</td><td>61.9</td><td>55.3</td><td>51.0</td><td>5.8</td><td>53.2</td><td>46.2</td><td>59.8</td><td>0</td>
+            </tr>
+            <tr>
+              <th scope="row">MemVLN <small>[46] arXiv’26</small></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td>5.2</td><td>61.2</td><td>55.0</td><td>50.5</td><td>5.6</td><td>55.4</td><td>48.4</td><td>64.6</td><td>0</td>
+            </tr>
+            <tr class="ours">
+              <th scope="row">RevolveVLN (Ours)<sup>†</sup></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td><strong>4.3</strong></td><td><strong>67.9</strong></td><td><strong>64.2</strong></td><td><strong>59.4</strong></td><td><strong>4.6</strong></td><td><strong>65.3</strong></td><td><strong>55.4</strong></td><td><strong>68.4</strong></td><td>0</td>
+            </tr>
+            <tr>
+              <th scope="row">Qwen-RobotNav <small>[68] arXiv’26</small></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td>4.2</td><td>73.6</td><td>66.9</td><td>60.5</td><td>4.2</td><td>71.3</td><td>61.5</td><td>68.6</td><td>13.20</td>
+            </tr>
+            <tr>
+              <th scope="row">LightNav-0 <small>[44] arXiv’26</small></th><td>4B</td><td>✓</td><td></td><td></td><td></td><td>3.9</td><td>73.7</td><td>68.5</td><td><strong>62.8</strong></td><td>3.7</td><td><strong>73.6</strong></td><td><strong>64.5</strong></td><td>67.4</td><td>33.80</td>
+            </tr>
+            <tr class="ours">
+              <th scope="row">RevolveVLN (Ours)</th><td>4B</td><td>✓</td><td></td><td></td><td></td><td><strong>3.5</strong></td><td><strong>74.4</strong></td><td><strong>69.3</strong></td><td>61.3</td><td><strong>3.7</strong></td><td>70.0</td><td>59.2</td><td><strong>72.9</strong></td><td>1.10</td>
+            </tr>
+            </tbody></table>
+        </div>
+        <p class="table-note" id="vln-notes"><b>†</b> The benchmark-only model is compared with the rows above it. Extra data is measured in millions of training samples. A check mark in that column indicates an undisclosed count. NE is navigation error in metres. OSR, SR, SPL and nDTW are reported as percentages. Bold values follow the manuscript.</p>
+      </article>
+      <div class="benchmark-feature benchmark-navspace">
+        <div class="benchmark-heading"><p class="benchmark-kicker">NavSpace · Zero-shot evaluation</p><h3>Beyond route following</h3><p>RevolveVLN reaches <strong>29.1% macro success</strong> with benchmark training data alone. With 1.10M additional samples, it reaches <strong>33.7%</strong>, exceeding GPT-6.1-sol (high) by <strong>2.9 percentage points</strong>.</p><p class="benchmark-detail">The macro average gives equal weight to each of the six spatial task types.</p></div>
+        <figure class="benchmark-chart"><a href="assets/benchmark-navspace.png" target="_blank" rel="noopener" aria-label="Open full-size chart: NavSpace macro success rate: RevolveVLN 33.7%, GPT-6.1-sol high 30.8%, SNav 26.0%."><img src="assets/benchmark-navspace.png" width="3840" height="2160" loading="lazy" decoding="async" alt="NavSpace macro success rate: RevolveVLN 33.7%, GPT-6.1-sol high 30.8%, SNav 26.0%."></a></figure>
+      </div>
+      <article class="result" aria-labelledby="navtitle">
+        <h3 id="navtitle"><span>Table 2</span> Zero-shot spatial generalization on NavSpace</h3>
+        <div class="table-shell" role="region" tabindex="0" aria-label="NavSpace results, scroll horizontally on narrow screens">
+          <table class="nav-table" aria-describedby="nav-notes"><caption class="sr-only">Zero-shot spatial generalization on NavSpace</caption>
+            <thead><tr><th rowspan="2" scope="col">Method</th><th colspan="6" scope="colgroup">Subtask success rate (%)</th><th colspan="3" scope="colgroup">Macro average</th></tr>
+              <tr><th scope="col">VP</th><th scope="col">PM</th><th scope="col">VS</th><th scope="col">SpR</th><th scope="col">ES</th><th scope="col">SS</th><th scope="col">NE ↓</th><th scope="col">OSR ↑</th><th scope="col">SR ↑</th></tr></thead>
+            <tbody>
+            <tr>
+              <th scope="row">LLaVA-Video-7B</th><td>7.7</td><td>3.5</td><td>6.8</td><td>11.3</td><td>6.5</td><td>4.5</td><td>6.1</td><td>15.3</td><td>6.7</td>
+            </tr>
+            <tr>
+              <th scope="row">Qwen2.5-VL-7B</th><td>6.3</td><td>2.5</td><td>7.7</td><td>9.4</td><td>8.5</td><td>10.5</td><td>5.7</td><td>15.7</td><td>7.5</td>
+            </tr>
+            <tr>
+              <th scope="row">GLM-4.5V-106B</th><td>7.7</td><td>2.5</td><td>7.2</td><td>9.4</td><td>12.0</td><td>6.5</td><td>5.9</td><td>19.9</td><td>7.6</td>
+            </tr>
+            <tr>
+              <th scope="row">GPT-5</th><td>18.3</td><td>3.0</td><td>12.6</td><td>17.5</td><td>17.5</td><td>16.5</td><td>5.0</td><td>20.2</td><td>14.2</td>
+            </tr>
+            <tr>
+              <th scope="row">Gemini-2.5-Pro</th><td>23.6</td><td>4.0</td><td>9.2</td><td>7.1</td><td>13.0</td><td>10.0</td><td>5.0</td><td>17.2</td><td>11.2</td>
+            </tr>
+            <tr>
+              <th scope="row">NaVid</th><td>23.1</td><td>7.0</td><td>22.7</td><td>24.1</td><td>33.0</td><td>10.0</td><td>4.9</td><td>30.7</td><td>20.0</td>
+            </tr>
+            <tr>
+              <th scope="row">NaVILA</th><td>3.4</td><td>2.5</td><td>5.3</td><td>3.8</td><td>8.0</td><td>13.0</td><td>6.3</td><td>8.8</td><td>6.0</td>
+            </tr>
+            <tr>
+              <th scope="row">StreamVLN</th><td>23.1</td><td>8.0</td><td>21.3</td><td>24.5</td><td>28.0</td><td>10.0</td><td>5.1</td><td>30.9</td><td>19.2</td>
+            </tr>
+            <tr>
+              <th scope="row">SNav</th><td>28.8</td><td>12.4</td><td>23.7</td><td>32.5</td><td>41.5</td><td>17.0</td><td>4.5</td><td>36.7</td><td>26.0</td>
+            </tr>
+            <tr class="ours">
+              <th scope="row">RevolveVLN (Ours)<sup>†</sup></th><td>36.1</td><td>10.9</td><td>31.9</td><td>42.0</td><td>39.0</td><td>14.5</td><td>4.2</td><td>42.7</td><td>29.1</td>
+            </tr>
+            <tr>
+              <th scope="row">GPT-6.1-sol (high)</th><td>24.0</td><td><strong>43.8</strong></td><td>32.4</td><td>28.3</td><td>36.5</td><td>20.0</td><td>4.2</td><td>36.7</td><td>30.8</td>
+            </tr>
+            <tr class="ours">
+              <th scope="row">RevolveVLN (Ours)</th><td><strong>38.0</strong></td><td>12.9</td><td><strong>37.7</strong></td><td><strong>44.3</strong></td><td><strong>43.0</strong></td><td><strong>26.5</strong></td><td><strong>4.1</strong></td><td><strong>46.7</strong></td><td><strong>33.7</strong></td>
+            </tr>
+            </tbody></table>
+        </div>
+        <p class="table-note" id="nav-notes"><b>VP</b> vertical perception · <b>PM</b> precise movement · <b>VS</b> viewpoint shifting · <b>SpR</b> spatial relationship · <b>ES</b> environment state · <b>SS</b> space structure. Macro averages weight the six categories equally. <b>†</b> marks RevolveVLN trained without additional navigation data. The unmarked RevolveVLN uses 1.10M additional training samples. Bold values indicate the best result in each column. Baseline results are from the NavSpace benchmark [59].</p>
+      </article>
+    </div></section>
+    <section class="simulation section" id="simulation" aria-labelledby="simulation-title"><div class="wide">
+      <h2 id="simulation-title">Simulation demos</h2>
+      <p class="simulation-intro">Selected navigation rollouts on R2R-CE, RxR-CE and NavSpace. Each video shows the instruction, first-person observations and the corresponding executed trajectory.</p>
+      <div class="simulation-grid">
+          <article class="simulation-case"><h3>R2R-CE / 1</h3><video controls playsinline preload="none" poster="assets/sim-r2r-151.png" aria-label="R2R-CE / 1 navigation recording"><source src="assets/sim-r2r-151.mp4" type="video/mp4"><a href="assets/sim-r2r-151.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>R2R-CE / 2</h3><video controls playsinline preload="none" poster="assets/sim-r2r-25.png" aria-label="R2R-CE / 2 navigation recording"><source src="assets/sim-r2r-25.mp4" type="video/mp4"><a href="assets/sim-r2r-25.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>R2R-CE / 3</h3><video controls playsinline preload="none" poster="assets/sim-r2r-46.png" aria-label="R2R-CE / 3 navigation recording"><source src="assets/sim-r2r-46.mp4" type="video/mp4"><a href="assets/sim-r2r-46.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>RxR-CE / 1</h3><video controls playsinline preload="none" poster="assets/sim-rxr-10053.png" aria-label="RxR-CE / 1 navigation recording"><source src="assets/sim-rxr-10053.mp4" type="video/mp4"><a href="assets/sim-rxr-10053.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>RxR-CE / 2</h3><video controls playsinline preload="none" poster="assets/sim-rxr-1809.png" aria-label="RxR-CE / 2 navigation recording"><source src="assets/sim-rxr-1809.mp4" type="video/mp4"><a href="assets/sim-rxr-1809.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>RxR-CE / 3</h3><video controls playsinline preload="none" poster="assets/sim-rxr-7072.png" aria-label="RxR-CE / 3 navigation recording"><source src="assets/sim-rxr-7072.mp4" type="video/mp4"><a href="assets/sim-rxr-7072.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Vertical Perception</h3><video controls playsinline preload="none" poster="assets/sim-navspace-vertical-perception-55.png" aria-label="NavSpace · Vertical Perception navigation recording"><source src="assets/sim-navspace-vertical-perception-55.mp4" type="video/mp4"><a href="assets/sim-navspace-vertical-perception-55.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Precise Movement</h3><video controls playsinline preload="none" poster="assets/sim-navspace-precise-movement-66.png" aria-label="NavSpace · Precise Movement navigation recording"><source src="assets/sim-navspace-precise-movement-66.mp4" type="video/mp4"><a href="assets/sim-navspace-precise-movement-66.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Viewpoint Shifting</h3><video controls playsinline preload="none" poster="assets/sim-navspace-viewpoint-shifting-3.png" aria-label="NavSpace · Viewpoint Shifting navigation recording"><source src="assets/sim-navspace-viewpoint-shifting-3.mp4" type="video/mp4"><a href="assets/sim-navspace-viewpoint-shifting-3.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Spatial Relationship</h3><video controls playsinline preload="none" poster="assets/sim-navspace-spatial-relationship-8.png" aria-label="NavSpace · Spatial Relationship navigation recording"><source src="assets/sim-navspace-spatial-relationship-8.mp4" type="video/mp4"><a href="assets/sim-navspace-spatial-relationship-8.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Environment State</h3><video controls playsinline preload="none" poster="assets/sim-navspace-environment-state-14.png" aria-label="NavSpace · Environment State navigation recording"><source src="assets/sim-navspace-environment-state-14.mp4" type="video/mp4"><a href="assets/sim-navspace-environment-state-14.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Space Structure</h3><video controls playsinline preload="none" poster="assets/sim-navspace-space-structure-102.png" aria-label="NavSpace · Space Structure navigation recording"><source src="assets/sim-navspace-space-structure-102.mp4" type="video/mp4"><a href="assets/sim-navspace-space-structure-102.mp4">Open the navigation recording</a></video></article>
+      </div>
+    </div></section>
+    <section class="demo section" id="real-world" aria-labelledby="demo-title">
+      <div class="wide">
+        <h2 id="demo-title">Real-world demos</h2>
+        <a class="demo-overview" href="assets/real-world-tasks.webp" target="_blank" rel="noopener" aria-label="View Figure 4 at full size (opens in a new tab)">
+          <figure>
+            <img src="assets/real-world-tasks.webp"
+                 srcset="assets/real-world-tasks-1280.webp 1280w, assets/real-world-tasks.webp 3200w"
+                 sizes="(min-width: 1320px) 1280px, 97vw" width="3200" height="1772"
+                 loading="lazy" decoding="async"
+                 alt="A return trip from the living room through the hallway and back, followed by five tasks: passing between landmarks, following a conditional route, finding the farthest room, locating the second chair, and choosing the farthest chair.">
+            <figcaption>
+              <span><strong>Figure 4.</strong> Each task pairs robot observations with the corresponding R³ spatial memory.</span>
+              <span class="overview-zoom">View full size <span aria-hidden="true">↗</span></span>
+            </figcaption>
+          </figure>
+        </a>
+        <div class="demo-tasks">
+          <article class="demo-task" id="long-horizon-return" aria-labelledby="long-horizon-return-title">
+            <h3 id="long-horizon-return-title">Long-horizon return</h3>
+            <figure>
+              <div class="demo-screen">
+                <video controls muted playsinline preload="none" width="2560" height="1440" src="assets/demos/main.mp4" data-stream="assets/demos/main/index.m3u8" data-poster="assets/demos/main.webp" aria-labelledby="long-horizon-return-title" aria-describedby="long-horizon-return-views long-horizon-return-instruction"><a href="assets/demos/main.mp4">Open the four-view recording</a></video>
+                <div class="camera-labels" id="long-horizon-return-views" aria-hidden="true"><span>Fixed camera</span><span>Tracking camera</span><span>First-person view</span><span>R³ reconstruction</span></div>
+              </div>
+              <figcaption id="long-horizon-return-instruction"><b class="instruction-label">Instruction</b> Move forward to <strong>1 m before</strong> the black door, then turn <strong>right</strong> into the hallway; <strong>turn around</strong>, <strong>return to the start</strong> and stop beside the TV.</figcaption>
+            </figure>
+          </article>
+          <article class="demo-task" id="between-landmarks" aria-labelledby="between-landmarks-title">
+            <h3 id="between-landmarks-title">Between two landmarks</h3>
+            <figure>
+              <div class="demo-screen">
+                <video controls muted playsinline preload="none" width="2560" height="1440" src="assets/demos/case1.mp4" data-stream="assets/demos/case1/index.m3u8" data-poster="assets/demos/case1.webp" aria-labelledby="between-landmarks-title" aria-describedby="between-landmarks-views between-landmarks-instruction"><a href="assets/demos/case1.mp4">Open the four-view recording</a></video>
+                <div class="camera-labels" id="between-landmarks-views" aria-hidden="true"><span>Fixed camera</span><span>Tracking camera</span><span>First-person view</span><span>R³ reconstruction</span></div>
+              </div>
+              <figcaption id="between-landmarks-instruction"><b class="instruction-label">Instruction</b> Pass <strong>right</strong> of the dining table, then between the sofa and coffee table. Stop <strong>between the sofa and chair</strong>.</figcaption>
+            </figure>
+          </article>
+          <article class="demo-task" id="conditional-route" aria-labelledby="conditional-route-title">
+            <h3 id="conditional-route-title">Conditional navigation</h3>
+            <figure>
+              <div class="demo-screen">
+                <video controls muted playsinline preload="none" width="2560" height="1440" src="assets/demos/case2.mp4" data-stream="assets/demos/case2/index.m3u8" data-poster="assets/demos/case2.webp" aria-labelledby="conditional-route-title" aria-describedby="conditional-route-views conditional-route-instruction"><a href="assets/demos/case2.mp4">Open the four-view recording</a></video>
+                <div class="camera-labels" id="conditional-route-views" aria-hidden="true"><span>Fixed camera</span><span>Tracking camera</span><span>First-person view</span><span>R³ reconstruction</span></div>
+              </div>
+              <figcaption id="conditional-route-instruction"><b class="instruction-label">Instruction</b> <strong>If</strong> a pot is on the dining table, pass to its <strong>right</strong> and stop at the island pot; <strong>otherwise</strong> stop by the TV.</figcaption>
+            </figure>
+          </article>
+          <article class="demo-task" id="farthest-room" aria-labelledby="farthest-room-title">
+            <h3 id="farthest-room-title">The farthest room</h3>
+            <figure>
+              <div class="demo-screen">
+                <video controls muted playsinline preload="none" width="2560" height="1440" src="assets/demos/case3.mp4" data-stream="assets/demos/case3/index.m3u8" data-poster="assets/demos/case3.webp" aria-labelledby="farthest-room-title" aria-describedby="farthest-room-views farthest-room-instruction"><a href="assets/demos/case3.mp4">Open the four-view recording</a></video>
+                <div class="camera-labels" id="farthest-room-views" aria-hidden="true"><span>Fixed camera</span><span>Tracking camera</span><span>First-person view</span><span>R³ reconstruction</span></div>
+              </div>
+              <figcaption id="farthest-room-instruction"><b class="instruction-label">Instruction</b> Enter the right hallway; choose the <strong>furthest</strong> right-hand room and stop <strong>in front of</strong> its bed.</figcaption>
+            </figure>
+          </article>
+          <article class="demo-task" id="second-chair" aria-labelledby="second-chair-title">
+            <h3 id="second-chair-title">The second chair along the path</h3>
+            <figure>
+              <div class="demo-screen">
+                <video controls muted playsinline preload="none" width="2560" height="1440" src="assets/demos/case4.mp4" data-poster="assets/demos/case4.webp" aria-labelledby="second-chair-title" aria-describedby="second-chair-views second-chair-instruction"><a href="assets/demos/case4.mp4">Open the four-view recording</a></video>
+                <div class="camera-labels" id="second-chair-views" aria-hidden="true"><span>Fixed camera</span><span>Tracking camera</span><span>First-person view</span><span>R³ reconstruction</span></div>
+              </div>
+              <figcaption id="second-chair-instruction"><b class="instruction-label">Instruction</b> Walk forward, locate the <strong>second chair</strong> along your path, and stop <strong>beside it</strong>.</figcaption>
+            </figure>
+          </article>
+          <article class="demo-task" id="farthest-chair" aria-labelledby="farthest-chair-title">
+            <h3 id="farthest-chair-title">The farthest visible chair</h3>
+            <figure>
+              <div class="demo-screen">
+                <video controls muted playsinline preload="none" width="2560" height="1440" src="assets/demos/case5.mp4" data-poster="assets/demos/case5.webp" aria-labelledby="farthest-chair-title" aria-describedby="farthest-chair-views farthest-chair-instruction"><a href="assets/demos/case5.mp4">Open the four-view recording</a></video>
+                <div class="camera-labels" id="farthest-chair-views" aria-hidden="true"><span>Fixed camera</span><span>Tracking camera</span><span>First-person view</span><span>R³ reconstruction</span></div>
+              </div>
+              <figcaption id="farthest-chair-instruction"><b class="instruction-label">Instruction</b> Find the <strong>furthest</strong> visible chair and stop <strong>in front of it</strong>.</figcaption>
+            </figure>
+          </article>
+        </div>
+      </div>
+    </section>
+    <section class="citation section" id="bibtex" aria-labelledby="bibtex-title">
+      <div class="wide">
+        <h2 id="bibtex-title">Citation</h2>
+        <p class="citation-note">If you use RevolveVLN in your research, please cite our paper.</p>
+        <div class="citation-block">
+          <pre aria-labelledby="bibtex-title"><code id="bibtex-entry">@misc{jia_revolvevln,
+  title  = {{RevolveVLN}: Evolving Egocentric Memory towards Spatial Intelligence
+            in Vision-Language Navigation},
+  author = {Jia, Yilin and Zhong, Yangyi and Yao, Hongze and Liu, Mai and
+            Lv, Xiaohui and Tao, Shuai and Liu, Wulong and Li, Rong and
+            Gong, Zeying and Hu, Tianshuai and Fan, Junfeng and Liang, Junwei}
+}</code></pre>
+          <div class="citation-actions">
+            <a href="RevolveVLN.bib" download>Download .bib</a>
+            <button type="button" id="copy-bibtex" hidden>Copy BibTeX</button>
+            <span id="copy-status" role="status"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <aside class="release-status" id="release-arxiv"><h2>arXiv preprint</h2><p>The preprint link will appear here when the paper is available on arXiv.</p><a href="#top">Close</a></aside>
+  <aside class="release-status" id="release-checkpoints"><h2>Checkpoints</h2><p>The model weights will be released in a separate repository. Its link will appear here when available.</p><a href="#top">Close</a></aside>
+  <dialog id="resource-dialog" aria-labelledby="resource-name" aria-describedby="resource-message"><h2 id="resource-name"></h2><p id="resource-message"></p><form method="dialog"><button>Close</button></form></dialog>
+</body>
+</html>
