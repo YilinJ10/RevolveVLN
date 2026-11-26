@@ -12,8 +12,8 @@
   <link rel="preload" href="assets/dm-sans.woff" as="font" type="font/woff" crossorigin>
   <link rel="preload" href="assets/hero-robot-portrait.webp" as="image" media="(max-aspect-ratio: 4/5)" fetchpriority="high">
   <link rel="preload" href="assets/hero-robot.webp?v=7aae7e741b63" as="image" media="not all and (max-aspect-ratio: 4/5)" fetchpriority="high">
-  <link rel="stylesheet" href="styles.css?v=be1dd81a1121">
-  <script src="site.js?v=08e8c0a823d9" defer></script>
+  <link rel="stylesheet" href="styles.css?v=17241067d86d">
+  <script src="site.js?v=7fd180191dfc" defer></script>
   <noscript><style>
     .demo-screen video { background-position: center; background-size: contain; background-repeat: no-repeat; }
     #long-horizon-return video { background-image: url("assets/demos/main.webp"); }
@@ -33,7 +33,7 @@
         <img class="opening-poster" src="assets/hero-robot.webp?v=7aae7e741b63" width="1920" height="1080" alt="" fetchpriority="high">
       </picture>
       <div class="film-frame">
-        <video id="hero-video" data-stream="assets/route-film-c55d49b41580/full.m3u8" data-src="assets/long-horizon.mp4?v=d1256c2f5e04" muted playsinline loop preload="none" disablepictureinpicture></video>
+        <video id="hero-video" data-stream="assets/route-film-c55d49b41580/full.m3u8?v=68d4b0981bd6" data-src="assets/long-horizon.mp4?v=d1256c2f5e04" muted playsinline loop preload="none" disablepictureinpicture></video>
         <canvas id="held-camera-frame" hidden></canvas>
       </div>
     </div>
@@ -41,7 +41,7 @@
     <div class="hero-views" role="group" aria-label="Synchronized views of the full navigation task">
       <figure class="eye-view">
         <div class="inset-view">
-          <img src="assets/hero-egocentric.webp?v=d47cbba9345e"
+          <img fetchpriority="high" decoding="async" src="assets/hero-egocentric.webp?v=d47cbba9345e"
                srcset="assets/hero-egocentric-640.webp 640w, assets/hero-egocentric-960.webp 960w, assets/hero-egocentric.webp?v=d47cbba9345e 1920w"
                sizes="(max-width: 36rem) and (orientation: portrait) 44vw, (orientation: portrait) min(33vw, 268px), clamp(195px, 23vw, 385px)"
                alt="The robot looks out of the corridor toward the living room" width="1920" height="1080">
@@ -52,7 +52,7 @@
       </figure>
       <figure class="memory-view">
         <div class="inset-view">
-          <img src="assets/hero-reconstruction.webp?v=eda077679192"
+          <img fetchpriority="high" decoding="async" src="assets/hero-reconstruction.webp?v=eda077679192"
                srcset="assets/hero-reconstruction-640.webp 640w, assets/hero-reconstruction-960.webp 960w, assets/hero-reconstruction.webp?v=eda077679192 1920w"
                sizes="(max-width: 36rem) and (orientation: portrait) 51vw, (orientation: portrait) min(37vw, 298px), clamp(218px, 26.4vw, 445px)"
                alt="R³ reconstruction of the corridor and living room at the same moment" width="1920" height="912">
@@ -253,18 +253,18 @@
       <h2 id="simulation-title">Simulation demos</h2>
       <p class="simulation-intro">Selected navigation rollouts on R2R-CE, RxR-CE and NavSpace. Each video shows the instruction, first-person observations and the corresponding executed trajectory.</p>
       <div class="simulation-grid">
-          <article class="simulation-case"><h3>R2R-CE / 1</h3><video controls playsinline preload="none" poster="assets/sim-r2r-151.png" aria-label="R2R-CE / 1 navigation recording"><source src="assets/sim-r2r-151.mp4" type="video/mp4"><a href="assets/sim-r2r-151.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>R2R-CE / 2</h3><video controls playsinline preload="none" poster="assets/sim-r2r-25.png" aria-label="R2R-CE / 2 navigation recording"><source src="assets/sim-r2r-25.mp4" type="video/mp4"><a href="assets/sim-r2r-25.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>R2R-CE / 3</h3><video controls playsinline preload="none" poster="assets/sim-r2r-46.png" aria-label="R2R-CE / 3 navigation recording"><source src="assets/sim-r2r-46.mp4" type="video/mp4"><a href="assets/sim-r2r-46.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>RxR-CE / 1</h3><video controls playsinline preload="none" poster="assets/sim-rxr-10053.png" aria-label="RxR-CE / 1 navigation recording"><source src="assets/sim-rxr-10053.mp4" type="video/mp4"><a href="assets/sim-rxr-10053.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>RxR-CE / 2</h3><video controls playsinline preload="none" poster="assets/sim-rxr-1809.png" aria-label="RxR-CE / 2 navigation recording"><source src="assets/sim-rxr-1809.mp4" type="video/mp4"><a href="assets/sim-rxr-1809.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>RxR-CE / 3</h3><video controls playsinline preload="none" poster="assets/sim-rxr-7072.png" aria-label="RxR-CE / 3 navigation recording"><source src="assets/sim-rxr-7072.mp4" type="video/mp4"><a href="assets/sim-rxr-7072.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>NavSpace · Vertical Perception</h3><video controls playsinline preload="none" poster="assets/sim-navspace-vertical-perception-55.png" aria-label="NavSpace · Vertical Perception navigation recording"><source src="assets/sim-navspace-vertical-perception-55.mp4" type="video/mp4"><a href="assets/sim-navspace-vertical-perception-55.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>NavSpace · Precise Movement</h3><video controls playsinline preload="none" poster="assets/sim-navspace-precise-movement-66.png" aria-label="NavSpace · Precise Movement navigation recording"><source src="assets/sim-navspace-precise-movement-66.mp4" type="video/mp4"><a href="assets/sim-navspace-precise-movement-66.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>NavSpace · Viewpoint Shifting</h3><video controls playsinline preload="none" poster="assets/sim-navspace-viewpoint-shifting-3.png" aria-label="NavSpace · Viewpoint Shifting navigation recording"><source src="assets/sim-navspace-viewpoint-shifting-3.mp4" type="video/mp4"><a href="assets/sim-navspace-viewpoint-shifting-3.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>NavSpace · Spatial Relationship</h3><video controls playsinline preload="none" poster="assets/sim-navspace-spatial-relationship-8.png" aria-label="NavSpace · Spatial Relationship navigation recording"><source src="assets/sim-navspace-spatial-relationship-8.mp4" type="video/mp4"><a href="assets/sim-navspace-spatial-relationship-8.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>NavSpace · Environment State</h3><video controls playsinline preload="none" poster="assets/sim-navspace-environment-state-14.png" aria-label="NavSpace · Environment State navigation recording"><source src="assets/sim-navspace-environment-state-14.mp4" type="video/mp4"><a href="assets/sim-navspace-environment-state-14.mp4">Open the navigation recording</a></video></article>
-          <article class="simulation-case"><h3>NavSpace · Space Structure</h3><video controls playsinline preload="none" poster="assets/sim-navspace-space-structure-102.png" aria-label="NavSpace · Space Structure navigation recording"><source src="assets/sim-navspace-space-structure-102.mp4" type="video/mp4"><a href="assets/sim-navspace-space-structure-102.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>R2R-CE / 1</h3><video controls playsinline preload="none" data-poster="assets/sim-r2r-151.png" aria-label="R2R-CE / 1 navigation recording"><source src="assets/sim-r2r-151.mp4" type="video/mp4"><a href="assets/sim-r2r-151.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>R2R-CE / 2</h3><video controls playsinline preload="none" data-poster="assets/sim-r2r-25.png" aria-label="R2R-CE / 2 navigation recording"><source src="assets/sim-r2r-25.mp4" type="video/mp4"><a href="assets/sim-r2r-25.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>R2R-CE / 3</h3><video controls playsinline preload="none" data-poster="assets/sim-r2r-46.png" aria-label="R2R-CE / 3 navigation recording"><source src="assets/sim-r2r-46.mp4" type="video/mp4"><a href="assets/sim-r2r-46.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>RxR-CE / 1</h3><video controls playsinline preload="none" data-poster="assets/sim-rxr-10053.png" aria-label="RxR-CE / 1 navigation recording"><source src="assets/sim-rxr-10053.mp4" type="video/mp4"><a href="assets/sim-rxr-10053.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>RxR-CE / 2</h3><video controls playsinline preload="none" data-poster="assets/sim-rxr-1809.png" aria-label="RxR-CE / 2 navigation recording"><source src="assets/sim-rxr-1809.mp4" type="video/mp4"><a href="assets/sim-rxr-1809.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>RxR-CE / 3</h3><video controls playsinline preload="none" data-poster="assets/sim-rxr-7072.png" aria-label="RxR-CE / 3 navigation recording"><source src="assets/sim-rxr-7072.mp4" type="video/mp4"><a href="assets/sim-rxr-7072.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Vertical Perception</h3><video controls playsinline preload="none" data-poster="assets/sim-navspace-vertical-perception-55.png" aria-label="NavSpace · Vertical Perception navigation recording"><source src="assets/sim-navspace-vertical-perception-55.mp4" type="video/mp4"><a href="assets/sim-navspace-vertical-perception-55.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Precise Movement</h3><video controls playsinline preload="none" data-poster="assets/sim-navspace-precise-movement-66.png" aria-label="NavSpace · Precise Movement navigation recording"><source src="assets/sim-navspace-precise-movement-66.mp4" type="video/mp4"><a href="assets/sim-navspace-precise-movement-66.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Viewpoint Shifting</h3><video controls playsinline preload="none" data-poster="assets/sim-navspace-viewpoint-shifting-3.png" aria-label="NavSpace · Viewpoint Shifting navigation recording"><source src="assets/sim-navspace-viewpoint-shifting-3.mp4" type="video/mp4"><a href="assets/sim-navspace-viewpoint-shifting-3.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Spatial Relationship</h3><video controls playsinline preload="none" data-poster="assets/sim-navspace-spatial-relationship-8.png" aria-label="NavSpace · Spatial Relationship navigation recording"><source src="assets/sim-navspace-spatial-relationship-8.mp4" type="video/mp4"><a href="assets/sim-navspace-spatial-relationship-8.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Environment State</h3><video controls playsinline preload="none" data-poster="assets/sim-navspace-environment-state-14.png" aria-label="NavSpace · Environment State navigation recording"><source src="assets/sim-navspace-environment-state-14.mp4" type="video/mp4"><a href="assets/sim-navspace-environment-state-14.mp4">Open the navigation recording</a></video></article>
+          <article class="simulation-case"><h3>NavSpace · Space Structure</h3><video controls playsinline preload="none" data-poster="assets/sim-navspace-space-structure-102.png" aria-label="NavSpace · Space Structure navigation recording"><source src="assets/sim-navspace-space-structure-102.mp4" type="video/mp4"><a href="assets/sim-navspace-space-structure-102.mp4">Open the navigation recording</a></video></article>
       </div>
     </div></section>
     <section class="demo section" id="real-world" aria-labelledby="demo-title">

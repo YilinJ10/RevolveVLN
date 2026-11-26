@@ -8,6 +8,10 @@ const motion = document.getElementById('motion');
 const quality = document.getElementById('hero-quality');
 const eyes = document.getElementById('egocentric-canvas').getContext('2d', {alpha: false});
 const memory = document.getElementById('reconstruction-canvas').getContext('2d', {alpha: false});
+const frameProbe = document.createElement('canvas');
+frameProbe.width = 16;
+frameProbe.height = 16;
+const probe = frameProbe.getContext('2d', {willReadFrequently: true});
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const connection = navigator.connection;
 const compactTouchScreen = matchMedia('(pointer: coarse) and (max-width: 75rem)').matches;
@@ -24,6 +28,9 @@ let libraryPromise;
 let showingOpening = true;
 let openingPainted = false;
 let openingTimer = null;
+let needFrameCheck = true;
+let eyeWidth = 960;
+let memoryWidth = 960;
 
 const roomOut = [[0,.15],[5,.27],[10,.41],[15,.55],[20,.67],[25,.75],[30,.81],[40,.87],[45,.93],[49,.98]];
 const hallway = [[50,.61],[53,.47],[57,.43],[68,.40],[78,.39],[82,.41],[86,.47],[89.3,.54]];
@@ -39,13 +46,39 @@ function positionCamera(time) {
   if (filmFrame.style.getPropertyValue('--focus') !== focus) filmFrame.style.setProperty('--focus', focus);
 }
 
-function drawFrame(time = film.currentTime) {
+function hasBothViews(width, height) {
+  if (!probe || location.protocol === 'file:') return film.currentTime > 0;
+  probe.drawImage(film, width, 0, width, height, 0, 0, 16, 8);
+  probe.drawImage(film, 0, height, width, film.videoHeight - height, 0, 8, 16, 8);
+  const pixels = probe.getImageData(0, 0, 16, 16).data;
+  let eyeVisible = false;
+  for (let i = 0; i < pixels.length; i += 4) {
+    if (Math.max(pixels[i], pixels[i + 1], pixels[i + 2]) < 48) continue;
+    if (i < pixels.length / 2) eyeVisible = true;
+    else if (eyeVisible) return true;
+  }
+  return false;
+}
+
+function paintInset(ctx, x, y, width, height, outputWidth) {
+  const canvas = ctx.canvas;
+  const outputHeight = Math.round(outputWidth * height / width);
+  if (canvas.width !== outputWidth || canvas.height !== outputHeight) {
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+  }
+  ctx.drawImage(film, x, y, width, height, 0, 0, canvas.width, canvas.height);
+}
+
+function drawFrame(time) {
   if (showingOpening || resumeAt !== null || film.readyState < 2 || film.seeking || !eyes || !memory) return;
-  if (film.paused && !hero.classList.contains('has-frame')) return;
   const width = film.videoWidth / 2;
   const height = width * 9 / 16;
-  eyes.drawImage(film, width, 0, width, height, 0, 0, eyes.canvas.width, eyes.canvas.height);
-  memory.drawImage(film, 0, height, width, film.videoHeight-height, 0, 0, memory.canvas.width, memory.canvas.height);
+  if (!width || film.videoHeight <= height) return;
+  if (needFrameCheck && !hasBothViews(width, height)) return;
+  paintInset(eyes, width, 0, width, height, eyeWidth);
+  paintInset(memory, 0, height, width, film.videoHeight - height, memoryWidth);
+  needFrameCheck = false;
   positionCamera(time);
   heldCamera.hidden = true;
   hero.classList.add('has-frame');
@@ -62,15 +95,9 @@ function holdCameraFrame() {
 }
 
 function sizeInsets() {
-  if (!eyes || !memory) return;
-  for (const ctx of [eyes,memory]) {
-    const width = Math.max(1, Math.min(1920, Math.round(ctx.canvas.clientWidth * (window.devicePixelRatio || 1))));
-    if (ctx.canvas.width !== width) {
-      ctx.canvas.width = width;
-      ctx.canvas.height = Math.round(width*(ctx === eyes ? 9/16 : 19/40));
-    }
-  }
-  drawFrame();
+  const ratio = window.devicePixelRatio || 1;
+  eyeWidth = Math.max(1, Math.min(1920, Math.round(eyes.canvas.clientWidth * ratio)));
+  memoryWidth = Math.max(1, Math.min(1920, Math.round(memory.canvas.clientWidth * ratio)));
 }
 
 function onFrame(now, metadata) {
@@ -113,6 +140,7 @@ function loadLibrary() {
 }
 
 function releaseStream() {
+  needFrameCheck = true;
   const previous = stream;
   stream = null;
   previous?.destroy();
@@ -132,6 +160,7 @@ function useProgressive() {
 }
 
 async function useMediaSource() {
+  needFrameCheck = true;
   const revision = sourceRevision;
   mode = 'loading-library';
   try {
@@ -183,7 +212,7 @@ function updatePlayback() {
       openingTimer = null;
       showingOpening = false;
       updatePlayback();
-    }, 1500);
+    }, 850);
   }
   if (mode === 'idle') { startSource(); return; }
   if (mode === 'loading-library' || mode === 'attaching' || mode === 'failed') return;
@@ -199,9 +228,9 @@ film.addEventListener('loadedmetadata', () => {
     resumeAt = null;
   }
 });
-film.addEventListener('loadeddata', () => drawFrame());
-film.addEventListener('seeked', () => drawFrame());
-film.addEventListener('playing', () => { drawFrame(); schedule(); labelMotion(); });
+film.addEventListener('seeking', () => { needFrameCheck = true; });
+film.addEventListener('seeked', schedule);
+film.addEventListener('playing', () => { schedule(); labelMotion(); });
 film.addEventListener('error', () => {
   if (!film.error) return;
   if (mode === 'native') { rememberTime(); useMediaSource(); }
@@ -254,8 +283,7 @@ if (eyes && memory) {
   quality.hidden = location.protocol === 'file:' ||
     !(film.canPlayType('application/vnd.apple.mpegurl') || window.MediaSource || window.ManagedMediaSource);
   labelQuality();
-  const stills = hero.querySelectorAll('.opening-poster, .inset-view img');
-  Promise.allSettled(Array.from(stills, image => image.decode?.())).then(() => {
+  Promise.resolve(hero.querySelector('.opening-poster').decode?.()).catch(() => {}).then(() => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       openingPainted = true;
       updatePlayback();
@@ -352,6 +380,7 @@ function prepareDemo(player) {
   player.poster = player.dataset.poster;
   if (player.dataset.stream) prepareDemoStream(player);
 }
+const demoPosters = document.querySelectorAll('main video[data-poster]');
 if ('IntersectionObserver' in window) {
   const approaching = new IntersectionObserver(entries => {
     for (const {target, isIntersecting} of entries) {
@@ -360,10 +389,10 @@ if ('IntersectionObserver' in window) {
         prepareDemo(target);
       }
     }
-  }, {rootMargin: '220px 0px'});
-  for (const player of demoPlayers) approaching.observe(player);
+  }, {rootMargin: '300px 0px'});
+  for (const player of demoPosters) approaching.observe(player);
 } else {
-  for (const player of demoPlayers) prepareDemo(player);
+  for (const player of demoPosters) prepareDemo(player);
 }
 
 const copyCitation = document.getElementById('copy-bibtex');
